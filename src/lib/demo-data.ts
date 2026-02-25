@@ -6,7 +6,9 @@
 
 import { Business } from "./types";
 import { ParsedQuery } from "./query-parser";
-import { buildBusinessMapsUrl } from "./scraper";
+function buildBusinessMapsUrl(name: string, location: string): string {
+  return `https://www.google.com/maps/search/${encodeURIComponent(`${name} ${location}`)}`;
+}
 
 // Business name templates by detected category
 const NAME_TEMPLATES: Record<string, string[]> = {
