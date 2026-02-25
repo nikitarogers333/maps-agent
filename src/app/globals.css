@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0a0a;
+  --card: #141414;
+  --border: #262626;
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --text: #fafafa;
+  --muted: #a1a1aa;
+  --success: #22c55e;
+  --warning: #eab308;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Animated gradient background */
+.hero-gradient {
+  background: radial-gradient(ellipse at top, rgba(59,130,246,0.15) 0%, transparent 60%),
+              radial-gradient(ellipse at bottom right, rgba(139,92,246,0.1) 0%, transparent 50%);
+}
+
+/* Pulse animation for loading */
+@keyframes pulse-ring {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(1.4); opacity: 0; }
+}
+.pulse-ring::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: pulse-ring 1.5s ease-out infinite;
+}
+
+/* Card hover effect */
+.result-card {
+  transition: all 0.2s ease;
+  border: 1px solid var(--border);
+}
+.result-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(59,130,246,0.15);
+}
+
+/* Star rating */
+.star-filled { color: #eab308; }
+.star-empty { color: #404040; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #404040; }
