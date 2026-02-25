@@ -9,10 +9,10 @@ function Stars({ rating }: { rating: number }) {
     <div className="flex items-center gap-0.5" aria-label={`Rating ${rating} out of 5`}>
       {Array.from({ length: 5 }).map((_, i) => (
         <span key={i} className={i < full ? "star-filled" : "star-empty"}>
-          ★
+          
         </span>
       ))}
-      <span className="ml-2 text-sm text-zinc-400">{rating.toFixed(1)}</span>
+      <span className="ml-2 text-sm text-zinc-400">{rating ? rating.toFixed(1) : "N/A"}</span>
     </div>
   );
 }
@@ -22,7 +22,9 @@ function Badge({ children }: { children: React.ReactNode }) {
 }
 
 export default function HomePage() {
-  const [query, setQuery] = useState("Find a mobile dog groomer near me that can come to my house. Compare a few options.");
+  const [query, setQuery] = useState(
+    "Need a mobile dog groomer near me that can come to my house. Compare a few options by price."
+  );
   const [location, setLocation] = useState("Austin, TX");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -61,7 +63,8 @@ export default function HomePage() {
             <div>
               <h1 className="text-3xl font-semibold tracking-tight">Indiana Jones</h1>
               <p className="mt-2 text-zinc-400">
-                Universal local-search agent UI. Type what you need in plain English (anything), add a location, and compare options.
+                Local business search agent powered by <span className="text-zinc-200">Google Places API</span>. Type what you need in plain English,
+                add a location, and compare options.
               </p>
               <div className="mt-3 flex flex-wrap gap-2 text-xs text-zinc-400">
                 <Badge>mobile / on-site</Badge>
@@ -75,9 +78,9 @@ export default function HomePage() {
             <div className="hidden sm:block text-right text-sm text-zinc-400">
               <div className="font-medium text-zinc-200">Examples</div>
               <div className="mt-1 space-y-1">
-                <div className="text-zinc-400">“Best tacos near me open now”</div>
-                <div className="text-zinc-400">“Need an emergency plumber that does house calls”</div>
-                <div className="text-zinc-400">“Affordable car detailing near me”</div>
+                <div className="text-zinc-400"> Best tacos open now</div>
+                <div className="text-zinc-400">Emergency plumber that does house calls</div>
+                <div className="text-zinc-400">Affordable car detailing near me</div>
               </div>
             </div>
           </div>
@@ -94,7 +97,7 @@ export default function HomePage() {
                 placeholder='e.g. "Need a mobile locksmith near me under $200"'
               />
               <div className="mt-2 text-xs text-zinc-500">
-                Tip: add requirements like “mobile”, “open now”, “under $X”, “emergency”, etc.
+                Tip: add requirements like mobile, open now, affordable, emergency, etc.
               </div>
             </div>
             <div>
@@ -110,12 +113,14 @@ export default function HomePage() {
                 disabled={loading}
                 className="mt-4 w-full rounded-xl bg-blue-600 px-4 py-3 font-medium text-white hover:bg-blue-700 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                {loading ? "Searching…" : "Search"}
+                {loading ? "Searching" : "Search"}
               </button>
 
-              <div className="mt-3 rounded-xl border border-[var(--border)] bg-black/10 p-3 text-xs text-zinc-500">
-                This build returns smart demo results so the experience works end-to-end. Next we can connect a real data provider.
-              </div>
+              {data && (
+                <div className="mt-3 rounded-xl border border-[var(--border)] bg-black/10 p-3 text-xs text-zinc-400">
+                  Data: <span className="text-zinc-200">{data.apiStatus === "live" ? "Live (Google Places)" : "Demo fallback"}</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -133,16 +138,14 @@ export default function HomePage() {
           </div>
 
           {!data && !loading && (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-zinc-400">
-              Run a search to see results.
-            </div>
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8 text-zinc-400">Run a search to see results.</div>
           )}
 
           {loading && (
             <div className="rounded-2xl border border-[var(--border)] bg-[var(--card)] p-8">
               <div className="flex items-center gap-3">
                 <div className="relative h-3 w-3 rounded-full bg-blue-500 pulse-ring" />
-                <div className="text-zinc-300">Agent is scanning listings…</div>
+                <div className="text-zinc-300">Agent is searching</div>
               </div>
               <div className="mt-4 space-y-3">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -158,22 +161,22 @@ export default function HomePage() {
 
               <div className="grid gap-4">
                 {businesses.map((b, idx) => (
-                  <div key={idx} className="result-card rounded-2xl bg-[var(--card)] p-5">
+                  <div key={`${b.placeId || idx}`} className="result-card rounded-2xl bg-[var(--card)] p-5">
                     <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                      <div>
+                      <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-lg font-semibold">{b.name}</h3>
+                          <h3 className="text-lg font-semibold truncate">{b.name}</h3>
                           {b.priceLevel && (
-                            <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs text-zinc-300">
-                              {b.priceLevel}
-                            </span>
+                            <span className="rounded-full border border-[var(--border)] px-2 py-0.5 text-xs text-zinc-300">{b.priceLevel}</span>
                           )}
-                          {b.distance && <Badge>{b.distance}</Badge>}
+                          {b.currentlyOpen !== null && (
+                            <Badge>{b.currentlyOpen ? "Open now" : "Closed"}</Badge>
+                          )}
                         </div>
 
                         <div className="mt-1 flex items-center gap-3">
                           <Stars rating={b.rating} />
-                          <span className="text-sm text-zinc-500">({b.reviewCount.toLocaleString()} reviews)</span>
+                          <span className="text-sm text-zinc-500">({(b.reviewCount || 0).toLocaleString()} reviews)</span>
                         </div>
 
                         {b.description && <p className="mt-2 text-sm text-zinc-300">{b.description}</p>}
@@ -208,7 +211,7 @@ export default function HomePage() {
                         </div>
                       </div>
 
-                      <div className="md:text-right">
+                      <div className="md:text-right shrink-0">
                         <a
                           className="inline-flex items-center justify-center rounded-xl border border-[var(--border)] bg-black/20 px-4 py-2 text-sm text-zinc-200 hover:border-blue-500"
                           target="_blank"
@@ -235,11 +238,8 @@ export default function HomePage() {
 
         <footer className="mt-12 text-xs text-zinc-500">
           <div className="rounded-xl border border-[var(--border)] bg-[var(--card)] p-4">
-            <div className="font-medium text-zinc-300">Next step: real listings + price estimates</div>
-            <div className="mt-1">
-              To return real businesses with phone/website/hours and better price comparison, we’ll connect a compliant provider (Google Places API
-              or a Maps SERP provider) and add filters + sorting.
-            </div>
+            <div className="font-medium text-zinc-300">Configure live data</div>
+            <div className="mt-1">Set <code className="text-zinc-300">GOOGLE_PLACES_API_KEY</code> to enable live results from Google Places.</div>
           </div>
         </footer>
       </div>

@@ -1,4 +1,5 @@
 export interface Business {
+  placeId: string;
   name: string;
   rating: number;
   reviewCount: number;
@@ -6,12 +7,16 @@ export interface Business {
   phone: string;
   website: string;
   hours: string;
+  currentlyOpen: boolean | null;
   priceLevel: string;
+  priceLevelNum: number | null;
   description: string;
   tags: string[];
   mapsUrl: string;
-  thumbnail: string;
+  photoUrl: string;
   distance?: string;
+  lat: number;
+  lng: number;
 }
 
 export interface SearchResult {
@@ -21,6 +26,8 @@ export interface SearchResult {
   summary: string;
   searchedAt: string;
   searchType: string;
+  totalFound: number;
+  apiStatus: "live" | "demo" | "error";
 }
 
 export interface SearchRequest {

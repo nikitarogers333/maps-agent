@@ -105,7 +105,12 @@ export function parseBusinessFromRawText(rawBlocks: string[], location: string):
       description,
       tags: potentialTags,
       mapsUrl: buildBusinessMapsUrl(name, location),
-      thumbnail: "",
+      photoUrl: "",
+      lat: 0,
+      lng: 0,
+      placeId: "",
+      currentlyOpen: null,
+      priceLevelNum: null,
       distance,
     });
   }

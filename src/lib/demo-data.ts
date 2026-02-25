@@ -126,7 +126,12 @@ export function generateDemoResults(parsed: ParsedQuery, location: string): Busi
       description: descriptions[randomInt(0, descriptions.length - 1)],
       tags,
       mapsUrl: buildBusinessMapsUrl(name, location),
-      thumbnail: "",
+      photoUrl: "",
+      lat: 0,
+      lng: 0,
+      placeId: "",
+      currentlyOpen: null,
+      priceLevelNum: null,
       distance,
     });
   }
