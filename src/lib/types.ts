@@ -11,6 +11,7 @@ export interface Business {
   tags: string[];
   mapsUrl: string;
   thumbnail: string;
+  distance?: string;
 }
 
 export interface SearchResult {
@@ -19,6 +20,7 @@ export interface SearchResult {
   businesses: Business[];
   summary: string;
   searchedAt: string;
+  searchType: string;
 }
 
 export interface SearchRequest {

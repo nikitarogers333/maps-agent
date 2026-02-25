@@ -1,10 +1,12 @@
-// Google Maps scraping via SerpAPI-style URL parsing
-// This module builds Google Maps search URLs and parses the results
+/**
+ * Google Maps URL builder + result parser.
+ * Works with any business category — fully generic.
+ */
 
 import { Business } from "./types";
 
 /**
- * Build a Google Maps search URL
+ * Build a Google Maps search URL for any query
  */
 export function buildMapsSearchUrl(query: string, location: string): string {
   const searchTerm = encodeURIComponent(`${query} near ${location}`);
@@ -12,10 +14,18 @@ export function buildMapsSearchUrl(query: string, location: string): string {
 }
 
 /**
- * Parse raw scraped data from Google Maps into structured Business objects.
- * This runs server-side and processes the raw text extracted from the Maps page.
+ * Build a direct Google Maps link for a specific business
  */
-export function parseBusinessFromRawText(rawBlocks: string[]): Business[] {
+export function buildBusinessMapsUrl(businessName: string, location: string): string {
+  const searchTerm = encodeURIComponent(`${businessName} ${location}`);
+  return `https://www.google.com/maps/search/${searchTerm}`;
+}
+
+/**
+ * Parse raw scraped data from Google Maps into structured Business objects.
+ * Generic parser — works for any business type.
+ */
+export function parseBusinessFromRawText(rawBlocks: string[], location: string): Business[] {
   const businesses: Business[] = [];
 
   for (const block of rawBlocks) {
@@ -27,38 +37,61 @@ export function parseBusinessFromRawText(rawBlocks: string[]): Business[] {
     // Extract rating (e.g. "4.5" or "4.5(123)")
     const ratingMatch = block.match(/(\d\.\d)\s*\(?([\d,]+)\)?/);
     const rating = ratingMatch ? parseFloat(ratingMatch[1]) : 0;
-    const reviewCount = ratingMatch ? parseInt(ratingMatch[2].replace(",", "")) : 0;
+    const reviewCount = ratingMatch ? parseInt(ratingMatch[2].replace(/,/g, "")) : 0;
 
-    // Extract phone
-    const phoneMatch = block.match(/(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/);
+    // Extract phone (US format)
+    const phoneMatch = block.match(/(\+?1?[\s.-]?\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/);
     const phone = phoneMatch ? phoneMatch[1] : "";
 
-    // Extract address (lines with numbers and street-like words)
+    // Extract address
     const addressLine = lines.find(
-      (l) => /\d+.*(?:st|ave|blvd|dr|rd|ln|way|ct|pl|hwy|suite|ste|#)/i.test(l)
+      (l) => /\d+.*(?:st|ave|blvd|dr|rd|ln|way|ct|pl|hwy|suite|ste|#|street|avenue|road|drive)/i.test(l)
     );
     const address = addressLine || "";
 
     // Extract price level
-    const priceMatch = block.match(/(\${1,4})/);
-    const priceLevel = priceMatch ? priceMatch[1] : "";
+    const priceMatch = block.match(/(\${1,4})\s*·|\·\s*(\${1,4})/);
+    const priceLevel = priceMatch ? (priceMatch[1] || priceMatch[2]) : "";
 
     // Extract hours
-    const hoursMatch = block.match(/((?:Open|Closed).*?(?:AM|PM|hours|24).*?)(?:\n|$)/i);
+    const hoursMatch = block.match(/((?:Open|Closed|Opens?|Closes?).*?(?:AM|PM|hours|24|midnight|noon).*?)(?:\n|$)/i);
     const hours = hoursMatch ? hoursMatch[1].trim() : "";
 
-    // Detect tags/categories
-    const tagPatterns = [
-      /mobile/i, /repair/i, /screen/i, /battery/i, /walk-in/i,
-      /appointment/i, /same.day/i, /warranty/i, /certified/i,
-      /pickup/i, /delivery/i, /on-site/i, /emergency/i
+    // Extract distance
+    const distMatch = block.match(/(\d+\.?\d*)\s*(mi|miles|km|min)/i);
+    const distance = distMatch ? `${distMatch[1]} ${distMatch[2]}` : "";
+
+    // Detect tags/categories generically
+    const potentialTags: string[] = [];
+    const tagPatterns: [RegExp, string][] = [
+      [/mobile/i, "mobile"],
+      [/on[- ]?site/i, "on-site"],
+      [/house ?call/i, "house call"],
+      [/delivery/i, "delivery"],
+      [/pickup|pick[- ]?up/i, "pickup"],
+      [/walk[- ]?in/i, "walk-in"],
+      [/appointment/i, "appointment"],
+      [/same[- ]?day/i, "same day"],
+      [/next[- ]?day/i, "next day"],
+      [/24[- ]?hour/i, "24 hour"],
+      [/emergency/i, "emergency"],
+      [/warranty/i, "warranty"],
+      [/certified/i, "certified"],
+      [/licensed/i, "licensed"],
+      [/insured/i, "insured"],
+      [/free estimate/i, "free estimate"],
+      [/free consultation/i, "free consultation"],
+      [/free quote/i, "free quote"],
     ];
-    const tags = tagPatterns
-      .filter((p) => p.test(block))
-      .map((p) => p.source.replace(/\\-/g, "-").replace(/\\/g, "").replace(/\./g, " "));
+    for (const [pat, tag] of tagPatterns) {
+      if (pat.test(block)) potentialTags.push(tag);
+    }
 
     // Build description from remaining content
-    const description = lines.slice(1, 4).join(" · ");
+    const description = lines
+      .slice(1, 4)
+      .filter((l) => l.length > 3 && l.length < 200)
+      .join(" · ");
 
     businesses.push({
       name,
@@ -70,9 +103,10 @@ export function parseBusinessFromRawText(rawBlocks: string[]): Business[] {
       hours,
       priceLevel,
       description,
-      tags,
-      mapsUrl: "",
+      tags: potentialTags,
+      mapsUrl: buildBusinessMapsUrl(name, location),
       thumbnail: "",
+      distance,
     });
   }
 
